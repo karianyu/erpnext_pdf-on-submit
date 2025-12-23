@@ -5,12 +5,12 @@ import json
 
 import frappe
 from frappe import _
-from frappe.core.api.file import create_new_folder
 from frappe.model.naming import _format_autoname
 from frappe.realtime import publish_realtime
 from frappe.translate import print_language
 from frappe.utils.data import evaluate_filters
 from frappe.utils.weasyprint import PrintFormatGenerator
+from frappe.core.doctype.file.file import File
 
 
 def attach_pdf(doc, event=None):
@@ -167,7 +167,7 @@ def save_and_attach(content, to_doctype, to_name, folder, auto_name=None, to_fie
 	file.attached_to_doctype = to_doctype
 	file.attached_to_name = to_name
 	file.attached_to_field = to_field
-	file.save()
+	file.save(ignore_permissions=True)
 
 	if to_field:
 		frappe.db.set_value(to_doctype, to_name, to_field, file.file_url)
@@ -183,3 +183,14 @@ def set_name_from_naming_options(autoname, doc):
 		return _format_autoname(autoname, doc)
 
 	return doc.name
+
+
+def create_new_folder(file_name: str, folder: str) -> File:
+	"""create new folder under current parent folder"""
+	file = frappe.new_doc("File")
+	file.file_name = file_name
+	file.is_folder = 1
+	file.folder = folder
+	# file.insert(ignore_if_duplicate=True)
+	file.save(ignore_permissions=True)
+	return file
